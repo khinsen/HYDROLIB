@@ -3,9 +3,14 @@ set name = `echo $1 | sed -e "s/\.f//"`
 set obj = $2
 shift
 shift
-cp $name.f temp.c
-cc -E -I. -D$LALIB $* temp.c | grep -v "#" | grep -v "implicit none" > temp.f
-rm -f temp.c
-$FC $FCFLAGS1 temp.f
-mv temp.o $obj
-rm -f temp.f
+source ../local.def
+if ($cpp == 1) then
+  $FC -cpp -I. $FCFLAGS1 -D$LALIB $* $name.f -o $obj
+else
+  cp $name.f temp.c
+  cc -E -I. -D$LALIB $* temp.c | grep -v "#" | grep -v "implicit none" > temp.f
+  rm -f temp.c
+  $FC $FCFLAGS1 temp.f
+  mv temp.o $obj
+  rm -f temp.f
+endif
