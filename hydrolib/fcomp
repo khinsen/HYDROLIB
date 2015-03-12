@@ -1,0 +1,11 @@
+#!/bin/csh
+set name = `echo $1 | sed -e "s/\.f//"`
+set obj = $2
+shift
+shift
+cp $name.f temp.c
+cc -E -I. -D$LALIB $* temp.c | grep -v "#" | grep -v "implicit none" > temp.f
+rm -f temp.c
+$FC $FCFLAGS1 temp.f
+mv temp.o $obj
+rm -f temp.f

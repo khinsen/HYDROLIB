@@ -1,0 +1,61 @@
+#
+# Some definitions depending on the local installation
+#
+
+# Fortran compiler peculiarities
+
+# DEC, Silicon Graphics
+#setenv FC f77
+#setenv RANLIB touch
+#setenv FCFLAGS1 "-c -O"
+#setenv FCFLAGS2 "-O"
+#set cpp = 1
+#set dpoption = -r8
+
+# Sun 3
+#setenv FC f77
+#setenv RANLIB ranlib
+#setenv FCFLAGS1 "-c -O"
+#setenv FCFLAGS2 "-O"
+#set cpp = 0
+#set dpoption = NONE
+
+# IBM RS/6000 systems
+#setenv FC xlf
+#setenv RANLIB touch
+#setenv FCFLAGS1 "-c -O"
+#setenv FCFLAGS2 "-O"
+#set cpp = 0
+#set dpoption = NONE
+
+# HP PA-RISC systems
+#setenv FC fort77
+#setenv RANLIB ranlib
+#setenv FCFLAGS1 "-c -O"
+#setenv FCFLAGS2 "-O"
+#set cpp = 0
+#set dpoption = NONE
+
+# NAG Fortran-90 compiler
+#setenv FC f90
+#setenv RANLIB ranlib
+#setenv FCFLAGS1 "-c -O"
+#setenv FCFLAGS2 "-O"
+#set cpp = 0
+#set dpoption = NONE
+
+# NeXT-Station with Absoft compiler
+#setenv FC f77
+#setenv RANLIB ranlib
+#setenv FCFLAGS1 "-c -f -O"
+#setenv FCFLAGS2 "-f -O"
+#set cpp = 0
+#set dpoption = NONE
+
+#
+# Loader options to find linear algebra library
+# Depends on local installations; if necessary, ask
+# your system administrator for assistance.
+# The line below is just an example.
+#
+set lalib = "-L@ -llapack -lblas"

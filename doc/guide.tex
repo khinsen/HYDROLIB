@@ -1,0 +1,673 @@
+\documentstyle[12pt]{article}
+
+\oddsidemargin 0pt
+\evensidemargin 0pt
+\textwidth 16.2cm
+
+\newcommand{\vect}[1]{{\bf #1}}
+\newcommand{\tens}[1]{{\bf #1}}
+\newcommand{\gvect}[1]{\mbox{\boldmath $#1$}}
+\newcommand{\gtens}[1]{\mbox{\boldmath $#1$}}
+\newcommand{\ti}[2]{\tens{#1}^{#2}}
+\newcommand{\gti}[2]{\gtens{#1}^{#2}}
+\newcommand{\vr}{\vect{r}}
+\newcommand{\vR}{\vect{R}}
+\newcommand{\vE}{\vect{E}}
+\newcommand{\vv}{\vect{v}}
+\newcommand{\vF}{\vect{F}}
+\newcommand{\vU}{\vect{U}}
+\newcommand{\tzeta}{\gtens{\zeta}}
+\newcommand{\tmu}{\gtens{\mu}}
+\newcommand{\prog}[1]{{\tt #1}}
+\newcommand{\name}[1]{{\sc #1}}
+\newcommand{\btitle}[1]{{#1,}}
+\newcommand{\vol}[1]{{\bf #1}}
+
+\newcommand{\wsp}{\hspace*{0.5cm}}
+
+\begin{document}
+
+\title{HYDROLIB: installation and usage guide}
+\author{K. Hinsen\\
+        Institut f\"ur Theoretische Physik A\\
+        RWTH Aachen}
+\date{}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Overview}
+
+The Hydrodynamic Interactions Library (\prog{HYDROLIB}) consists of a
+set of Fortran subroutines that calculate hydrodynamic interactions in
+an arbitrary configuration of equal hard spheres with stick boundary
+conditions, optionally with arbitrary rigid links between the
+spheres. The quantities that can be calculated are:
+\begin{itemize}
+\item the friction matrix for a given particle configuration
+\item the mobility matrix for a given particle configuration
+\item the forces on all particles of a given configuration moving
+with given velocities
+\item particle velocities for a given particle configuration and a given set
+of forces
+\end{itemize}
+The main features of the library are:
+\begin{itemize}
+\item controllable and adjustable accuracy
+\item efficient calculation
+\item suitability for finite and periodic geometries
+\end{itemize}
+
+The program has been checked intensively for various configurations,
+ranging from two spheres (for which it produces exact results) to more
+than a hundred. In addition, many internal consistency checks have
+been done and the code has been checked with
+\prog{ftnchek}.\footnote{\prog{ftnchek} checks Fortran programs for
+semantic errors that compilers normally don't detect. It is available
+by \prog{ftp} from \prog{netlib.att.com}.} Nevertheless, I cannot
+guarantee for anything; if you use \prog{HYDROLIB}, you do so at your
+own risk.
+
+
+\section{Friction and mobility matrices}
+
+\subsection{Physical background}
+
+When spheres immersed into a liquid move with prescribed linear
+velocities $\vect{U}$ and angular velocities $\gvect{\Omega}$, the
+forces $\vect{F}$ and torques $\vect{T}$ acting on them are described
+by the {\em friction matrix} $\tzeta$:
+\[
+\left(\begin{array}{c} \vect{F}\\ \vect{T} \end{array}\right) = 
+\left(\begin{array}{cc}
+\tzeta^{tt} & \tzeta^{tr} \\
+\tzeta^{rt} & \tzeta^{rr}
+\end{array}\right) \left(\begin{array}{c}
+\vv_0-\vU\\ \frac{1}{2}\nabla\times\vv_0-\gvect{\Omega}
+\end{array}\right)
+\]
+The velocity field $\vv_0$ is the incident velocity field, to be
+evaluated at the particle centers.
+
+Force and torque vectors are described by three components for each
+particle, therefore the friction matrix has the size $6N\times 6N$,
+where $N$ is the number of particles. The friction matrix can be shown
+to be symmetric.
+
+When the forces and torques are given, the velocities can be obtained
+from the
+{\em mobility matrix} $\tmu$:
+\[
+\left(\begin{array}{c}
+\vv_0-\vU\\ \frac{1}{2}\nabla\times\vv_0-\gvect{\Omega}
+\end{array}\right) = 
+\left(\begin{array}{cc}
+\tmu^{tt} & \tmu^{tr} \\
+\tmu^{rt} & \tmu^{rr}
+\end{array}\right) \left(\begin{array}{c}
+\vect{F}\\ \vect{T}
+\end{array}\right)
+\]
+The mobility matrix is the inverse of the friction matrix.
+
+A more detailed description of hydrodynamic interactions and an explanation
+of the theory on which the calculations are based can be found in
+\cite{cifehiwabl}. A description of this implementation has been
+published in \cite{hi1}.
+
+\subsection{Units}
+
+Dimensionless quantities are used for all numerical calculations.
+They are obtained as follows:
+\begin{itemize}
+\item[-] the radius $a$ of the spheres is set to 1.
+\item[-] the viscosity $\eta$ of the liquid is set to $1/4\pi$.
+\end{itemize}
+This leaves one unit undetermined (e.g. velocity or force), which can
+be chosen arbitrarily since it affects only the velocities and forces,
+but not their ratios, i.e.\ the friction and mobility matrices are
+independent of this choice.
+
+\subsection{Numerical calculation}
+\label{sec:numcalc}
+
+The numerical calculation of hydrodynamic interactions is based on a
+multipole expansion to take into account long-range interactions, and
+on results from lubrication theory to correctly include short-range
+interactions. The accuracy of the results can be controlled with the
+integer parameter $l_{\rm max}$, which is related to the highest
+multipole order included in the calculation. The parameter $l_{\rm
+max}$ must be in the range $0\ldots 3$. Increasing this parameter
+gives better accuracy, but increases the amount of memory and CPU time
+needed by the program. The parameter $l_{\rm max}$ is related to
+the multipole order $L$ used in \cite{cifehiwabl} and \cite{hi}
+by $l_{\rm max} = L-1$.
+
+The following table indicates how much memory is needed for a given
+value of $l_{\rm max}$, expressed in terms of the number of unknowns
+per particle in the system of equations that must be solved, and a
+rough estimate of the accuracy of the friction matrix elements:
+
+\begin{center}
+\begin{tabular}{|l|r|l|}
+\hline
+$l_{\rm max}$ & Unknowns & Accuracy\\
+\hline
+0 & 9 & 10--20\% \\
+1 & 24 & 1--5\% \\
+2 & 45 & $< 1\%$ \\
+3 & 84 & $<< 1\%$ \\
+\hline
+\end{tabular}
+\end{center}
+
+It is recommended to use $l_{\rm max} > 1$ only, since otherwise not
+all long-range terms are taken into account (see \cite{cifehiwabl} for
+details).
+
+
+\section{Installation and usage}
+
+\subsection{System requirements}
+
+\prog{HYDROLIB} can be used with most standard Unix systems.
+In addition to standard Unix tools, it needs a C preprocessor and a
+Fortran compiler. Unfortunately, Fortran compilers vary a lot in their
+abilities and command line syntax; some configuration is therefore
+unavoidable.
+
+You also need a linear algebra library. Currently only \prog{LAPACK}
+is supported.\footnote{The source code contains optional calls to
+\prog{IMSL}, dating back to early versions of this library.  However,
+they have not been updated to the current versions of
+\prog{HYDROLIB} and \prog{IMSL}, since \prog{IMSL} was not
+available for testing. The calls have been left in to facilitate later
+work on full \prog{IMSL} support. In their current state, they are
+definitely incomplete and probably not functional.} \prog{LAPACK}
+routines are free and available from several sources, e.g.\ by
+\prog{ftp} from \prog{netlib.att.com}\footnote{Login as
+\prog{anonymous} and use your e-mail address as password.} or by e-mail
+from \prog{netlib@ornl.gov}\footnote{Send a mail with the single word
+``help'' to that address to get detailed information.}. The \prog{HYDROLIB}
+archive file contains all the necessary files from \prog{LAPACK} and
+\prog{BLAS} (a set of low-level routines used by \prog{LAPACK}).
+However, you might wish to install a newer version or a version optimized
+for your machine.
+
+Linear algebra functions are needed for the calculation of eigenvalues
+(which is done only during initialization and for small matrices, so
+efficiency is not important) and for solving systems of linear
+equations. For some types of calculation, a matrix inversion routine
+is also called. Users who have experience with linear algebra packages
+and with the C preprocessor should be able to add support for other
+libraries. To do this, check all occurrences of
+\prog{\#ifdef LAPACK} in the source files. Add an appropriate
+section for whatever library functions you want to use, and delimit it
+by \prog{\#ifdef} and \prog{\#endif} with a suitable label. Replace
+all \prog{\#define LAPACK} lines in the file \prog{config.h} and in
+your application programs with a definition of the new label you have
+chosen. Add an appropriate section in the script file \prog{install\_lib}
+by copying and modifying the one for \prog{LAPACK}. Then reinstall the
+library.
+
+Porting \prog{HYDROLIB} to other operating systems is certainly
+possible, but some knowledge of Unix and the target system is
+required. However, porting the library is not necessary for running
+working programs on other machines, since it is possible to create
+``clean'' Fortran-77 code on a Unix system that can then be used
+wherever a Fortran compiler is available.
+
+
+\subsection{Installation}
+
+\begin{enumerate}
+
+\item
+Edit the file \prog{local.def}. The supplied version already contains
+the correct configurations for the most common Unix systems. If you are
+using one of these systems, simply uncomment the respective lines. For
+other machines, you must find the correct values from the manual for
+the Fortran compiler. The values of the variables have the following
+meaning:
+\begin{description}
+\item[\prog{FC}] The name of the command that invokes the Fortran compiler.
+\item[\prog{RANLIB}] The name of the command that creates a table of
+contents for archives. If your system has a command called \prog{ranlib} (check
+with \prog{which ranlib}), use it. Otherwise, try \prog{touch} (which actually
+does nothing). If this leads to error messages during linking, check the
+man page for the \prog{ar} command.
+\item[\prog{FCFLAGS1}] The options for compilation of a single file without
+linking. These options are used to compile the invariable parts of the
+library during installation.
+\item[\prog{FCFLAGS2}] The options for compilation and linking of one
+or several Fortran files. These options are used when compiling
+a program that uses \prog{HYDROLIB}.
+\item[\prog{cpp}] This variable should have the value \prog{1} if
+the Fortran compiler understands the option \prog{-cpp}, which
+causes it to run programs through the C preprocessor before compiling
+them, and if your Fortran compiler accepts the non-standard statement
+``implicit none''. Otherwise it should have the value \prog{0}.
+\item[\prog{dpoption}] If your Fortran compiler has an option to
+convert single precision programs to double precision, this option
+should become the value of this variable. Otherwise the value must
+be \prog{NONE}.
+\end{description}
+
+At the end of \prog{local.def}, there is a line starting with
+\prog{set lalib =}. You need to change this line only if you
+use another linear algebra library than \prog{LAPACK} or another
+version of \prog{LAPACK} than the one supplied with \prog{HYDROLIB}.
+Change the contents of the following string to
+whatever compiler options are necessary on your system to make the
+compiler find the linear algebra libraries.
+
+\item
+Type\\
+\wsp\prog{install\_lib}\\
+This will initiate the installation procedure. Installation might take several
+minutes, and in the course of it a series of Fortran compiler calls will
+be displayed.
+
+\item
+To check the installation, type\\
+\wsp\prog{fc example.f}\\
+This will compile a short test program. After
+compilation is finished, type\\
+\wsp\prog{a.out}\\
+to run the test program. The ouptut should be\\
+\wsp\prog{N = 6}\\
+\wsp\prog{3.288792419691321   4.296910545080898}\\
+\wsp\prog{9.912899454371797   94.71505251108327}\\
+The accuracy of the printed results will be system dependent.
+
+\end{enumerate}
+
+\subsection{Preparing application programs}
+
+To use the library in an application program, insert the following two lines
+before the first subroutine, function, or program statement:\\
+\wsp\prog{\#include "}{\em program}\prog{.h"}\\\
+\wsp\prog{\#include <subr.f>}\\
+{\em program} should be the name of the program file without the
+extension \prog{.f}. The file {\em program}\prog{.h} should be a
+copy of \prog{config.h} in which the parameters have been modified
+appropriately (see section~\ref{sec:config} for details).
+Note that the character \prog{\#} in the lines above may not be
+preceeded by white space.
+
+The available library calls are explained in section~\ref{sec:imp}.
+
+\subsection{Compilation and Fortran source code generation}
+
+Two commands are supplied to handle compilation and generation of
+portable Fortran source code.  The command \prog{fc} will compile an
+application program using all necessary compiler options and link it
+with the library. File arguments and additional compiler options
+should be specified as for the standard \prog{f77} command. The
+name of the configuration file can be specified using the option
+\prog{-h}~{\em config-file}\/. If this option is missing, \prog{fc}
+will use the name of the first source code file given and
+replace its extension \prog{.f} by \prog{.h}. If no file with
+this name exists, \prog{fc} will issue a warning and assume
+the name \prog{config.h}.
+
+The command \prog{fprog} will produce a complete Fortran source
+program that contains all necessary code (except for routines from the
+linear algebra package) and can be ported to any machine with a
+Fortran 77 compiler. It accepts the name of a single file with
+extension \prog{.f} and produces a file with the same name and
+extension \prog{.fsrc}. To run this program on another machine,
+transfer the generated program file {\em and} the files \prog{z2cl*},
+\prog{ocoeff} and \prog{hcoeff} from the folder \prog{hydrolib}
+to this machine. 
+
+\section{Configuration files}
+\label{sec:config}
+
+The Hydrodynamic Interactions Library requires some numerical parameters
+and some options that determine what is to be calculated. A special
+configuration file contains all this information. An example of such
+a file is the file \prog{config.h} supplied with the library. For each
+application program, create a copy of this file and modify it according
+to your needs.
+
+\subsection{Numerical parameters}
+
+These are specified by lines of the type\\
+\wsp\prog{\#define }{\em parameter\_name value}
+
+\begin{description}
+
+\item[]
+\prog{\_NP\_}\\
+This parameter must be set to the number of particles.
+
+\item[]
+\prog{\_LM\_}\\
+This parameter must be set to the value of $l_{\rm max}$, described in
+section~\ref{sec:numcalc}. It must be a number between 0 and 3.
+
+\end{description}
+
+
+\subsection{Compile-time options}
+
+Compile-time options are used to adapt the program code to the
+requirements of the application and the programming environment. They
+all result in different sections of code being included in the final
+program. An option is activated by a line of the type\\
+\wsp\prog{\#define }{\em option\_name}\\
+and switched off by\\
+\wsp\prog{\#undef }{\em option\_name}\\
+(In principle lines starting with \prog{\#undef} could be completely
+removed, but for ease of modification this is not recommended.)
+
+The first set of compile-time options is related to the type of
+problem being solved:
+
+\begin{description}
+
+\item[]
+\prog{PERIODIC}\\
+If defined, hydrodynamic interactions are calculated for a
+system with periodic boundary conditions. Only cubic elementary cells
+are supported. A common block named \prog{pbc} contains a variable
+\prog{box} of type \prog{real} which must be set to the edge length of
+the cubic cell. The coordinates that specify the particle
+configuration must be positive and less than the edge length. The
+particle configuration must be consistent with periodic boundary
+conditions, i.e.\ the particles may not overlap with each other or
+with each other's periodic images. This is {\em not} checked by the
+program.\\
+If \prog{PERIODIC} is not defined, a finite assembly of
+spheres in an infinite fluid is assumed. The particles may not overlap
+with each other; again this is {\em not} checked by the program. The
+particle coordinates can otherwise be arbitrary.
+
+\item[]
+\prog{RIGID}\\
+If defined, \prog{HYDROLIB} is able to handle
+rigid connections between the particles. A ``rigid connection'' between
+two particles means that no relative motion, neither translational nor
+rotational, is possible between these particles. Other than that, the
+``connections'' have no influence on the calculations; they are assumed
+to have no masses and no influence on the fluid flow. From this definition it
+follows that connectivity is transitive: if particle~1 is connected with
+particle~2 and particle~3, there is also an implicit connection between
+particles~2 and 3, since no relative motion between them is possible.
+The specification of connections is explained in section~\ref{sec:imp}.\\
+The presence of connections means that the number of degrees of freedom
+of the system is reduced, since any cluster of interconnected particles
+has only 6 degrees of freedom in total. Consequently, the friction and
+mobility matrices have fewer elements, namely 6 times the number of
+rigid clusters in the system. A particle cluster is described by the
+translational velocity of its ``center of mass'' (or rather what would
+be its center of mass if all particles had identical mass; in fact masses
+never enter in any calculation) and by an angular velocity about this
+point\footnote{In principle any point could be chosen as reference
+point for describing clusters, but this choice makes the interpretation
+of results easier if the cluster happens to have some symmetry.}.
+To make use of the results, the application program needs some information
+about the rigid clusters, which are available in a common block named
+\prog{rb}, which has the following form:\\
+\wsp\prog{real vrb(6*\_NP\_,6*\_NP\_)}\\
+\wsp\prog{integer nrb,irb(\_NP\_)}\\
+\wsp\prog{common /rb/ vrb,nrb,irb}\\
+The variable \prog{nrb} contains the number of rigid clusters. The
+array \prog{irb} contains for each particle the number of the cluster
+it belongs to (i.e.\ a number between 1 and \prog{nrb}). All particles
+with the same number form a cluster. The array \prog{vrb} makes it
+possible to convert forces and velocities between the rigid-cluster
+description (\prog{6*nrb} degrees of freedom) and the single-sphere
+description (6$N$ variables). Its first index runs from 1 to $6N$, its
+second index from 1 to \prog{6*nrb}. Multiplying a \prog{6*nrb}-dimensional
+velocity vector from the right gives the individual particle velocities,
+whereas multiplying by a 6$N$-dimensional force vector from the left gives
+the total forces and torques acting on the rigid clusters.\\
+
+\item[]
+\prog{FIXED}\\
+If defined, mobility calculations can be performed on systems
+in which some spheres are fixed while others can freely move.
+An additional common block named \prog{fix} is defined,
+which has the following form:\\
+\wsp\prog{integer nfixed}\\
+\wsp\prog{logical full}\\
+\wsp\prog{common /fix/ nfixed,full}\\
+The variable \prog{nfixed} contains the number of fixed particles.
+The fixed particles are always the {\em last} \prog{nfixed}
+particles in the configuration. If the variable \prog{full} has
+the value \prog{.true.}, everything will be recalculated.
+If it has the value \prog{.false.}, the program will assume that
+the fixed particles have not moved since the evaluation for the
+previous configuration. The variable \prog{full} must always be
+set to \prog{.true.} initially.
+
+\item[]
+\prog{FIXED\_FAST}\\
+Identical to \prog{FIXED}, except that the calculations are
+performed faster at the expense of a higher memory requirement.
+
+\item[]
+\prog{LUBRICATION}\\
+If defined, the program adds short-range corrections calculated from
+lubrication theory to the results of the multipole
+expansion. This should always be done unless it is known that these
+corrections are negligible.\\
+A potential problem is caused by the fact that the short-range
+corrections diverge for touching spheres. This will cause loss of
+precision for short distances and a program crash for actually
+touching spheres. The latter can be avoided by enabling the option
+\prog{RIGID} and defining a rigid connection between the touching
+particles (this does not affect the results since with stick
+boundary conditions, there can never be any relative motion between
+touching spheres). Specifying rigid connections also removes the
+loss of precision at small non-zero distances, but in that case the
+connection will also lead to different results.
+
+\item[]
+\prog{FRICTION}\\
+If defined, the program calculates the friction matrix. The friction
+matrix is returned in a common block named \prog{frict} of the form\\
+\wsp\prog{real fr(6*\_NP\_,6*\_NP\_)}\\
+\wsp\prog{common /frict/ fr}\\
+\begin{sloppy}
+The friction matrix consists of $6\times 6$-submatrices for each particle
+pair. It is always symmetric. The order of the 6 coordinates is
+$(x,y,z)_{\rm Translation},$ $(x,y,z)_{\rm Rotation}$.\\
+\end{sloppy}
+If the option \prog{RIGID} is used (see description above), the friction
+matrix has dimensions \prog{6*nrb}$\times$\prog{6*nrb}. Since
+\prog{nrb} is calculated at runtime, the array containing the friction
+matrix is still dimensioned as $6N\times 6N$, but not all elements
+are used.
+
+\item[]
+\prog{MOBILITY}\\
+If defined, the program calculates the mobility matrix. The mobility
+matrix is returned in a common block named \prog{mobil} of the form\\
+\wsp\prog{real mo(6*\_NP\_,6*\_NP\_)}\\
+\wsp\prog{common /mobil/ mo}\\
+\begin{sloppy}
+The mobility matrix consists of $6\times 6$-submatrices for each particle
+pair. It is always symmetric. The order of the 6 coordinates is
+$(x,y,z)_{\rm Translation},$ $(x,y,z)_{\rm Rotation}$.\\
+\end{sloppy}
+If the option \prog{RIGID} is used (see description above), the mobility
+matrix has dimensions \prog{6*nrb}$\times$\prog{6*nrb}. Since
+\prog{nrb} is calculated at runtime, the array containing the mobility
+matrix is still dimensioned as $6N\times 6N$, but not all elements
+are used.\\
+If the option \prog{FIXED} is used, only the mobility matrix elements
+for the freely moving particles have meaningful values.
+
+\item[]
+\prog{VELOCITIES}\\
+If defined, the program calculates particle velocities for a given set of
+forces and torques. The forces (input) and velocities (output) are
+contained in a common block named \prog{fv} of the form\\
+\wsp\prog{real f(6*\_NP\_),v(6*\_NP\_)}\\
+\wsp\prog{common /fv/ f,v}\\
+\begin{sloppy}
+The arrangement of the components of \prog{f} is
+$F_x^{(1)},F_y^{(1)},F_z^{(1)},$ $T_x^{(1)},T_y^{(1)},T_z^{(1)},
+\ldots,$ $T_z^{(N)}$. Similarly, \prog{v} is arranged as
+$U_x^{(1)},U_y^{(1)},U_z^{(1)},$ $\Omega_x^{(1)},\Omega_y^{(1)},
+\Omega_z^{(1)},\ldots,$ $\Omega_z^{(N)}$.\\
+\end{sloppy}
+If the option \prog{RIGID} is used, the forces and velocities are still
+single-particle quantities, but of course their calculation procedes
+in a different way. If the rigid-body velocities of the particle
+clusters are needed, the option \prog{RB\_VELOCITIES} (explained below)
+should be used.\\
+If the option \prog{FIXED} is used, only the velocity components
+referring to the freely moving particles have meaningful values.
+
+\item[]
+\prog{RB\_VELOCITIES}\\
+This option must be combined with \prog{RIGID} (see above).
+It is similar to
+\prog{VELOCITIES}, except that input forces and output velocities 
+describe the rigid-body motion of particle clusters. Consequently
+only the first \prog{6*nrb} elements are used.
+
+\item[]
+\prog{NORMALIZE}\\
+If defined, the friction and mobility matrices are normalized by their
+one-particle values. Since for a single particle there is no coupling
+between translation and rotation, normalization is possible only for
+the pure translation and rotation submatrices $\tzeta^{tt}$,
+$\tzeta^{rr}$, $\tmu^{tt}$ and $\tmu^{rr}$. Consequently it should
+{\em not} be done if combinations of translational and rotational
+motion are to be used.\\
+Particle velocities calculated using the option \prog{VELOCITIES} are
+never normalized.
+
+\item[]
+\prog{POSDEF}\\
+The system of linear equations that is solved to obtain the friction
+or mobility matrix can be shown to be positive definite. However, for
+large systems the coefficient matrix may not be positive definite from
+a numerical point of view. Linear algebra packages might therefore
+issue error messages when special algorithms for positive definite
+matrices are used.  Therefore the decision whether or not to use these
+algorithms is left to the user.\\ If \prog{POSDEF} is defined,
+routines from \prog{LAPACK} are called that are optimized for positive
+definite matrices. Otherwise, routines for general symmetric matrices
+are used.  It is recommended to leave \prog{POSDEF} defined until an
+actual warning about indefinite matrices occurs.\\
+
+\end{description}
+
+The second set of compile-time options is related to the programming
+environment:
+
+\begin{description}
+
+\item[]
+\prog{PACKED}\\
+If defined, the coefficient matrix for the system of linear equations
+to be solved is stored in a packed format suitable for symmetric
+matrices. This saves almost 50\% of memory space, but can lead to
+slightly higher execution times. In most applications the memory
+saving will outweigh the increased execution time, therefore it is
+recommended to leave this option enabled. In some cases, a
+small {\em decrease} of execution time was even observed with packed
+storage.
+
+\item[]
+\prog{DP}\\
+If defined, double precision code is used everywhere, and all external
+library functions are called in their version for double-precision
+calculations. If your Fortran compiler has an option for treating
+single-precision code as double precision (most compilers have), this
+will be applied to your application program.  In this case, defining
+and undefining \prog{DP} is sufficient to switch between single and
+double precision versions. If your compiler does not have such an
+option, you must prepare your code manually for double-precision
+calculations. However, there is no need to ever modify \prog{HYDROLIB}
+code.
+
+\item[]
+\prog{LAPACK}\\
+If defined, routines from the linear algebra package \prog{LAPACK} are
+used for the calculation of eigenvalues, for the solution of a system
+of linear equations, and for matrix inversion.\\
+Note that currently no other linear algebra libraries are
+supported. If you add support for another library, you can
+define the label you have chosen for that library instead
+of \prog{LAPACK}.
+
+\end{description}
+
+
+\section{Fortran subroutines in the library}
+\label{sec:imp}
+
+To calculate hydrodynamic interactions for a certain configuration of
+particles, you must write a Fortran program that calls subroutines
+from \prog{HYDROLIB}. For illustrational
+purposes, an example program (\prog{example.f}) is included that
+calculates the four independent friction coefficients for a linear
+chain of touching particles.
+
+During the initialization of the program, the subroutine \prog{init}
+must be called. If periodic boundary conditions are used, the
+variable \prog{box} in the common block \prog{pbc} must be set to the
+edge length of the cubic box, as explained in section~\ref{sec:config}.
+
+After that, the subroutine \prog{eval} can be called any number of times.
+This subroutine has no arguments, all input and output data are
+passed via common blocks. Which quantities are calculated by
+\prog{eval} depends on the compile-time options used, see
+section~\ref{sec:config} for details.
+
+Before calling \prog{eval}, the particle configuration must be
+stored in a two-dimensional array in the
+common block \prog{conf}. The first dimension of this array is 3, for
+the $x$-, $y$-, and $z$-coordinates, the second dimension is the
+number of particles. An example of a definition for this common block
+is\\
+\wsp\prog{real c(3,\_NP\_)}\\
+\wsp\prog{common /conf/ c}\\
+If the option \prog{RIGID} is activated, the particle configuration
+must be extended by a list of rigid connections between the particles.
+This takes the form of a $N\times N$-array of \prog{character*1}. Any
+character other than a space stands for a rigid connection between
+two particles. Only the upper-diagonal part of this array, i.e.\ elements
+for which the second index is larger than the first one, are used.
+With this addition, the common block \prog{conf} takes the form\\
+\wsp\prog{real c(3,\_NP\_)}\\
+\wsp\prog{character*1 cnct(\_NP\_,\_NP\_)}\\
+\wsp\prog{common /conf/ c,cnct}\\
+
+When particle velocities are to be calculated (option
+\prog{VELOCITIES}), the forces must be defined before calling
+\prog{eval}. This is done in the common block
+\prog{fv} as explained in section~\ref{sec:config}.
+
+After calling \prog{eval}, the results can be found in various common
+blocks as explained in section~\ref{sec:config}. The input data
+are not changed, with the possible exception of the character array
+specifying rigid connections. The contents of this array may have been
+changed to another equivalent specification of the same set of
+connections.
+
+
+\begin{thebibliography}{9}
+
+\bibitem{cifehiwabl}
+  \name{B. Cichocki, B.U. Felderhof, K. Hinsen,
+        E. Wajnryb, J. B{\l}awzdziewicz},
+  Friction and mobility of many spheres in Stokes flow,
+  J. Chem. Phys. \vol{100}, 3780~(1994)
+
+\bibitem{hi1}
+  \name{K. Hinsen},
+  \prog{HYDROLIB}: a library for the evaluation of hydrodynamic
+       interactions in colloidal suspensions,
+  Computer Physics Communications (1995)
+
+\end{thebibliography}
+
+\end{document}

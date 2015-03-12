@@ -1,0 +1,13 @@
+HYDROLIB is a library for the evaluation of
+hydrodynamic interactions between identical
+spherical particles immersed into a viscous
+fluid.
+
+An installation and usage guide is provided
+as a LaTeX file in doc/guide.tex.
+
+HYDROLIB comes with absolutely no guarantee;
+use it at your own risk.
+
+Konrad Hinsen.
+(hinsenk@ere.umontreal.ca)

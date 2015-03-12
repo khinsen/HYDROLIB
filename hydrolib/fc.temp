@@ -1,0 +1,83 @@
+#!/bin/csh
+
+set hlib = @
+source $hlib/local.def
+
+set args =
+set config =
+set next = 0
+foreach arg ($*)
+  if ($next) then
+    set config = $arg
+    set next = 0
+  else if ("$arg" == '-h') then
+    set next = 1
+  else
+    set args = ($args $arg)
+  endif
+end
+if ($config == "") then
+  foreach arg ($args)
+    if (-f $arg) then
+      set config = `echo $arg | sed -e "s/\.f/.h/"`
+      break
+    endif
+  end
+endif
+if (! -f $config) then
+  echo "$config not found, assuming config.h."
+  set config = config.h
+endif
+
+set lm = `awk '/#( )*define( )+_LM_/ { print $3 }' $config`
+
+set opath = sp
+set dpopt =
+set dpmacro =
+set test = `egrep '^#( )*define( )+DP' $config | wc`
+if ($test[1] == 1) then
+  set opath = dp
+  if (NONE == "$dpoption") then
+    set dpmacro = -DDPSOURCE
+  else
+    set dpopt = $dpoption
+  endif
+endif
+
+set pbc =
+set test = `egrep '^#( )*define( )+PERIODIC' $config | wc`
+if ($test[1] == 1) then
+  set pbc = "pbc"
+endif
+
+set obj1 = $hlib/$opath/gcalc$pbc$lm.o
+
+set obj2 =
+set test = `egrep '^#( )*define( )+LUBRICATION' $config | wc`
+if ($test[1] == 1) then
+  set obj2 = $hlib/$opath/lubrication$pbc.o
+endif
+
+if ($cpp == 1) then
+  $FC $FCFLAGS2 -cpp -I$hlib $dpmacro $dpopt $args $obj1 $obj2 $lalib
+else
+  set newargs =
+  set rmfiles =
+  foreach arg ($args)
+    switch ($arg)
+      case "*.f":
+	set cfile=`echo $arg | sed -e "s/\.f/I.c/"`
+	set iffile=`echo $arg | sed -e "s/\.f/I.f/"`
+	cp $arg $cfile
+	cc -E -I$hlib $dpmacro $cfile | grep -v "#" | \
+                 grep -v "implicit none" >$iffile
+	set newargs = ($newargs $iffile)
+	set rmfiles = ($rmfiles $iffile $cfile)
+	breaksw
+      default:
+	set newargs = ($newargs $arg)
+    endsw
+  end
+  $FC $FCFLAGS2 $dpopt $newargs $obj1 $obj2 $lalib
+  rm -f $rmfiles
+endif

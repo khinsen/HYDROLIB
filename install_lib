@@ -1,0 +1,46 @@
+#!/bin/csh
+
+setenv FC undefined
+source local.def
+if ($FC == "undefined") then
+  echo "Please edit the file local.def before installation\!"
+  exit
+endif
+
+set test = `egrep '^#( )*define( )+LAPACK' config.h | wc`
+if ($test[1] == 1) then
+  setenv LALIB LAPACK
+endif
+
+cd blas
+make
+mv libblas.a ../lalib
+cd ..
+cd lapack
+make
+mv liblapack.a ../lalib
+cd ..
+cd lalib
+set lapath = `pwd|sed -e "s/\//\\\//g"`
+cd ..
+sed -e "s/@/$lapath/" <local.def >hydrolib/local.def
+
+cd hydrolib
+
+set libpath = `pwd|sed -e "s/\//\\\//g"`
+sed -e "s/@/$libpath/" <fn >filenames.h
+sed -e "s/@/$libpath/" <fprog.temp >../fprog
+sed -e "s/@/$libpath/" <fc.temp >../fc
+chmod 755 ../fc ../fprog
+
+setenv DPSUFFIX
+setenv DPOPT
+make
+mkdir sp
+mv *.o sp
+
+setenv DPSUFFIX _dp
+setenv DPOPT -DDP
+make
+mkdir dp
+mv *.o dp

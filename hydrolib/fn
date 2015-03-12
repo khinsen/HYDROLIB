@@ -1,0 +1,18 @@
+/* names of input files */
+#ifdef INCLUDE
+#define FILENAME1 'ocoeff'
+#define FILENAME2 'hcoeff'
+#define FILENAME3 'z2cl0'
+#define FILENAME4 'z2cl1'
+#define FILENAME5 'z2cl2'
+#define FILENAME6 'z2cl3'
+#define FILENAME7 'z2cl2.1'
+#else
+#define FILENAME1 '@/ocoeff'
+#define FILENAME2 '@/hcoeff'
+#define FILENAME3 '@/z2cl0'
+#define FILENAME4 '@/z2cl1'
+#define FILENAME5 '@/z2cl2'
+#define FILENAME6 '@/z2cl3'
+#define FILENAME7 '@/z2cl2.1'
+#endif

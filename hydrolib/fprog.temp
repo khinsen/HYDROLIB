@@ -1,0 +1,28 @@
+#!/bin/csh
+
+set hlib = @
+
+set sfile=`echo $1 | sed -e "s/\.f/.fsrc/"`
+
+set config =
+foreach arg ($*)
+  if (-f $arg) then
+    set config = `echo $arg | sed -e "s/\.f/.h/"`
+    break
+  endif
+end
+if (! -f $config) then
+  echo "$config not found, assuming config.h."
+  set config = config.h
+endif
+
+set dp =
+set test = `egrep '^#( )*define( )+DP' $config | wc`
+if ($test[1] == 1) then
+  set dp = -DDPSOURCE
+endif
+
+cp $1 \$\$temp.c
+cc -E -I$hlib -DINCLUDE $dp \$\$temp.c | grep -v "#" | \
+      grep -v "implicit none" | grep -v '^ *$' > $sfile
+rm -f \$\$temp.c
