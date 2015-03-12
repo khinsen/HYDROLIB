@@ -4,6 +4,14 @@
 
 # Fortran compiler peculiarities
 
+# gfortran
+#setenv FC gfortran
+#setenv RANLIB ranlib
+#setenv FCFLAGS1 "-ffree-line-length-none -ffixed-line-length-none -c -O"
+#setenv FCFLAGS2 "-ffree-line-length-none -ffixed-line-length-none -O"
+#set cpp = 1
+#set dpoption = -fdefault-real-8
+
 # DEC, Silicon Graphics
 #setenv FC f77
 #setenv RANLIB touch
