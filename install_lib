@@ -36,11 +36,11 @@ chmod 755 ../fc ../fprog
 setenv DPSUFFIX
 setenv DPOPT
 make
-mkdir sp
+mkdir -p sp
 mv *.o sp
 
 setenv DPSUFFIX _dp
 setenv DPOPT -DDP
 make
-mkdir dp
+mkdir -p dp
 mv *.o dp
