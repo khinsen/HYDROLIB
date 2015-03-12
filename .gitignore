@@ -1,0 +1,6 @@
+**.o
+**.a
+fc
+fprog
+hydrolib/filenames.h
+hydrolib/local.def
