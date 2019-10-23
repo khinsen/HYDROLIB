@@ -4,7 +4,7 @@
 * Module GCALC                     *
 *                                  *
 * K. Hinsen                        *
-* Last revision: July 10, 2002     *
+* Last revision: December 7, 1993  *
 ************************************
 
 #include <filenames.h>
@@ -194,8 +194,7 @@
       parameter(lwork = 3*nmax)
       integer ipiv(nmax)
       double precision eval(nmax),ievec(nmax,nmax),evec(nmax,nmax)
-      double precision work(lwork)
-      integer info
+      double precision work(lwork),info
 #endif
 
       if (nm .gt. nmax) stop 'Error in msqrt!'

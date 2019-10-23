@@ -7,7 +7,7 @@
 * Module GCALC                     *
 *                                  *
 * K. Hinsen                        *
-* Last revision: July 10, 2002     *
+* Last revision: December 7, 1993  *
 ************************************
 
 #include <filenames.h>
@@ -197,8 +197,7 @@
       parameter(lwork = 3*nmax)
       integer ipiv(nmax)
       real eval(nmax),ievec(nmax,nmax),evec(nmax,nmax)
-      real work(lwork)
-      integer info
+      real work(lwork),info
 #endif
 
       if (nm .gt. nmax) stop 'Error in msqrt!'

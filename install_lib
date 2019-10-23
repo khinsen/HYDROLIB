@@ -12,6 +12,7 @@ if ($test[1] == 1) then
   setenv LALIB LAPACK
 endif
 
+mkdir lalib
 cd blas
 make
 mv libblas.a ../lalib
@@ -33,8 +34,8 @@ sed -e "s/@/$libpath/" <fprog.temp >../fprog
 sed -e "s/@/$libpath/" <fc.temp >../fc
 chmod 755 ../fc ../fprog
 
-setenv DPSUFFIX
-setenv DPOPT
+setenv DPSUFFIX ""
+setenv DPOPT ""
 make
 mkdir sp
 mv *.o sp
