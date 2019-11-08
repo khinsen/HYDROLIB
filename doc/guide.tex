@@ -1,4 +1,4 @@
-\documentstyle[12pt]{article}
+\documentclass[12pt]{article}
 
 \oddsidemargin 0pt
 \evensidemargin 0pt
@@ -6,8 +6,8 @@
 
 \newcommand{\vect}[1]{{\bf #1}}
 \newcommand{\tens}[1]{{\bf #1}}
-\newcommand{\gvect}[1]{\mbox{\boldmath $#1$}}
-\newcommand{\gtens}[1]{\mbox{\boldmath $#1$}}
+\newcommand{\gvect}[1]{\mathbf{#1}}
+\newcommand{\gtens}[1]{\mathbf{#1}}
 \newcommand{\ti}[2]{\tens{#1}^{#2}}
 \newcommand{\gti}[2]{\gtens{#1}^{#2}}
 \newcommand{\vr}{\vect{r}}
@@ -113,7 +113,7 @@ The mobility matrix is the inverse of the friction matrix.
 A more detailed description of hydrodynamic interactions and an explanation
 of the theory on which the calculations are based can be found in
 \cite{cifehiwabl}. A description of this implementation has been
-published in \cite{hi1}.
+published in \cite{hi}.
 
 \subsection{Units}
 
@@ -662,7 +662,7 @@ connections.
   Friction and mobility of many spheres in Stokes flow,
   J. Chem. Phys. \vol{100}, 3780~(1994)
 
-\bibitem{hi1}
+\bibitem{hi}
   \name{K. Hinsen},
   \prog{HYDROLIB}: a library for the evaluation of hydrodynamic
        interactions in colloidal suspensions,

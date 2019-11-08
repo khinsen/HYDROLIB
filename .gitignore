@@ -4,3 +4,7 @@ fc
 fprog
 hydrolib/filenames.h
 hydrolib/local.def
+doc/guide.aux
+doc/guide.log
+doc/guide.pdf
+doc/guide.toc
