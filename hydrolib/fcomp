@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/usr/bin/env csh
 set name = `echo $1 | sed -e "s/\.f//"`
 set obj = $2
 shift
