@@ -3,5 +3,6 @@
    "coreutils"
    "make"
    "grep"
-   "gfortran" "gcc-toolchain"
-   "lapack"))
+   "sed"
+   "gfortran"
+   "binutils"))
