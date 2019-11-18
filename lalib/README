@@ -1,0 +1,3 @@
+The HYDROLIB installation script expects this directory
+to exist. Since git cannot handle empty directories,
+something must be inside. This is it.
