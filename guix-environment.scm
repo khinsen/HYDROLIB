@@ -4,5 +4,4 @@
    "make"
    "grep"
    "sed"
-   "gfortran"
-   "binutils"))
+   "gfortran" "binutils" "glibc"))
